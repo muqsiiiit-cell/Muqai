@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MuqAI</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #050509;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.container {
+  width: min(900px, 94vw);
+  text-align: center;
+}
+
+h1 {
+  font-size: 48px;
+  margin: 0;
+  letter-spacing: 4px;
+}
+
+.subtitle {
+  color: #888;
+  margin-top: 8px;
+}
+
+.orb {
+  width: 190px;
+  height: 190px;
+  margin: 70px auto 35px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #777 10%, #222 35%, #050509 70%);
+  box-shadow:
+    0 0 25px #ffffff55,
+    0 0 80px #7774,
+    inset 0 0 35px #fff4;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.orb.listening {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 30px #fff,
+    0 0 100px #aaa,
+    0 0 180px #777;
+}
+
+.status {
+  font-size: 20px;
+  min-height: 30px;
+}
+
+.command {
+  margin: 25px auto;
+  max-width: 650px;
+  min-height: 60px;
+  padding: 18px;
+  border: 1px solid #ffffff20;
+  border-radius: 18px;
+  background: #ffffff08;
+  color: #ccc;
+}
+
+.hint {
+  color: #666;
+  font-size: 14px;
+  margin-top: 25px;
+}
+
+button {
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 30px;
+  padding: 13px 25px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>MuqAI</h1>
+  <div class="subtitle">Your personal AI assistant</div>
+
+  <div id="orb" class="orb"></div>
+
+  <div id="status" class="status">
+    Tap the orb and talk
+  </div>
+
+  <div id="command" class="command">
+    Waiting for command...
+  </div>
+
+  <button onclick="startListening()">🎙️ Talk to MuqAI</button>
+
+  <div class="hint">
+    Try: "open YouTube" · "search Redmi Pad Pro" · "what time is it"
+  </div>
+
+</div>
+
+<script>
+
+const orb = document.getElementById("orb");
+const statusText = document.getElementById("status");
+const commandText = document.getElementById("command");
+
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+let recognition;
+
+if (SpeechRecognition) {
+
+  recognition = new SpeechRecognition();
+
+  recognition.lang = "en-IN";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    orb.classList.add("listening");
+    statusText.innerText = "Listening...";
+  };
+
+  recognition.onend = () => {
+    orb.classList.remove("listening");
+  };
+
+  recognition.onerror = () => {
+    orb.classList.remove("listening");
+    statusText.innerText = "Couldn't hear that.";
+  };
+
+  recognition.onresult = (event) => {
+
+    const command =
+      event.results[0][0].transcript.toLowerCase();
+
+    commandText.innerText = `"${command}"`;
+
+    processCommand(command);
+  };
+
+} else {
+
+  statusText.innerText =
+    "Speech recognition isn't supported here.";
+
+}
+
+function startListening() {
+
+  if (!recognition) return;
+
+  statusText.innerText = "Starting...";
+
+  recognition.start();
+}
+
+orb.onclick = startListening;
+
+
+function speak(text) {
+
+  statusText.innerText = text;
+
+  const speech = new SpeechSynthesisUtterance(text);
+
+  speech.lang = "en-IN";
+  speech.rate = 1;
+  speech.pitch = 1;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(speech);
+}
+
+
+function processCommand(command) {
+
+  if (
+    command.includes("youtube") &&
+    !command.includes("search")
+  ) {
+
+    speak("Opening YouTube");
+
+    setTimeout(() => {
+      window.open(
+        "https://www.youtube.com",
+        "_blank"
+      );
+    }, 700);
+
+    return;
+  }
+
+
+  if (
+    command.includes("search") ||
+    command.includes("google")
+  ) {
+
+    let query = command
+      .replace("search", "")
+      .replace("google", "")
+      .trim();
+
+    if (!query) {
+      speak("What should I search?");
+      return;
+    }
+
+    speak("Searching " + query);
+
+    setTimeout(() => {
+
+      window.open(
+        "https://www.google.com/search?q=" +
+        encodeURIComponent(query),
+        "_blank"
+      );
+
+    }, 700);
+
+    return;
+  }
+
+
+  if (
+    command.includes("time") ||
+    command.includes("what time")
+  ) {
+
+    const now = new Date();
+
+    const time = now.toLocaleTimeString(
+      "en-IN",
+      {
+        hour: "numeric",
+        minute: "2-digit"
+      }
+    );
+
+    speak("It's " + time);
+
+    return;
+  }
+
+
+  if (
+    command.includes("hello") ||
+    command.includes("hi")
+  ) {
+
+    speak("Hey bro. MuqAI is online.");
+
+    return;
+  }
+
+
+  if (
+    command.includes("who are you") ||
+    command.includes("your name")
+  ) {
+
+    speak(
+      "I'm MuqAI, your personal AI assistant."
+    );
+
+    return;
+  }
+
+
+  speak(
+    "I heard you say " +
+    command +
+    ". I don't know that command yet."
+  );
+
+}
+
+</script>
+
+</body>
+</html>
